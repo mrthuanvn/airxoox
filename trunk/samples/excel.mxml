@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Panel xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx" creationComplete="sample()">
+	<fx:Declarations>
+		<!-- 非ビジュアルエレメント (サービス、値オブジェクトなど) をここに配置 -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import com.coltware.airxlib.utils.DateUtils;
+			import com.coltware.airxoox.airxoox_internal;
+			import com.coltware.airxoox.classes.OoxML;
+			import com.coltware.airxoox.core.CoreProps;
+			import com.coltware.airxoox.excel.SMLCell;
+			import com.coltware.airxoox.excel.SMLRow;
+			
+			import mx.logging.ILogger;
+			
+			private static var log:ILogger = Log.getLogger("airxoox.sample");
+			
+			import com.coltware.airxoox.SpreadsheetML;
+			import com.coltware.airxoox.excel.SMLWorkbook;
+			import com.coltware.airxoox.excel.SMLWorksheet;
+			
+			import mx.logging.Log;
+			import mx.logging.LogEventLevel;
+			import mx.logging.targets.TraceTarget;
+			
+			private function sample():void{
+				
+				var logTarget:TraceTarget = new TraceTarget();
+				logTarget.filters = ["com.coltware.airxoox.*","airxoox.*"];
+				logTarget.level = LogEventLevel.DEBUG;
+				logTarget.includeCategory = true;
+				logTarget.includeLevel = true;
+				logTarget.includeTime = true;
+				Log.addTarget(logTarget);
+				
+			}
+			
+			
+			private function testExcel():void{
+				var excel:SpreadsheetML = new SpreadsheetML();
+				excel.openFile(File.desktopDirectory.resolvePath("Book1.xlsx"),FileMode.UPDATE);
+				
+				// プロパティ情報を設定する
+				var core:CoreProps = excel.getCoreProperties();
+				core.setKeywords("sample,airxoox");
+				core.setTitle("this is sample data for airxoox");
+				core.setDescription("これはあくまでもサンプルです。気をつけてね");
+				
+				// WORKBOOKを読み込む
+				var workbook:SMLWorkbook = excel.getWorkbook();
+				
+				var sheets:Array = workbook.getSheetList();
+				log.debug("sheet size is .." + sheets.length );
+				
+				var worksheet:SMLWorksheet = workbook.getSheetAt(0);
+				
+				// これを忘れてはいけない。データが大きいといけないので使わないsheetは読まない
+				worksheet.load();
+				
+				//  すべてのデータを取得する
+				var rowList:Array = worksheet.getRowList();
+				for each(var row:SMLRow in rowList){
+					var cells:Array = row.getCellList();
+					for each(var _cell:SMLCell in cells){
+						log.debug(_cell.getCellId() + "=>" + _cell.getValue());
+					}
+				}
+				
+				// A1のセルの情報を取得する
+				var cell:SMLCell = worksheet.getCell("A1");
+				log.debug("A1 cell value : [" + 	cell.getStringValue() + "]");
+				//log.debug("A3 :[" + worksheet.getCell("A3").getStringValue() + "]");
+				
+				//  そして、そのセルの情報を上書き
+				cell.setStringValue("おーい、龍馬！");
+				
+				//  最後のファイル名を変えて書き込む
+				excel.saveFile(File.desktopDirectory.resolvePath("sample1.xlsx"));
+				excel.closeFile();
+			}
+			
+			
+			private function dumpCoreProps(core:CoreProps):void{
+				
+				log.debug("title=>" + core.getTitle());
+				log.debug("subject=>" + core.getSubject());
+				log.debug("creator=>" + core.getCreator());
+				log.debug("keywords=>" + core.getKeywords());
+				
+				log.debug("desc=>" + core.getDescription());
+				log.debug("lastModBy" + core.getLastModifiedBy());
+				
+				var createdAt:Number = core.getCreatedAt();
+				if(createdAt){
+					log.debug("created:" + DateUtils.dateToString("Y/m/d H:i:s",createdAt));
+				}
+			}
+		]]>
+	</fx:Script>
+	<s:HGroup>
+		<s:Button label="Excel" click="testExcel()" />
+	</s:HGroup>
+</s:Panel>
